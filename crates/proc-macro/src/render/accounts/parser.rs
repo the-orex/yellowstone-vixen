@@ -65,9 +65,7 @@ pub fn parser(
                 };
 
                 // Find the discriminator field by name
-                let Some(field) = struct_node.fields.iter().find(|f| f.name == node.name) else {
-                    return None;
-                };
+                let field = struct_node.fields.iter().find(|f| f.name == node.name)?;
 
                 // Skip if discriminator field isn't fixed-size bytes
                 let TypeNode::FixedSize(fixed_size_node) = &field.r#type else {
@@ -77,9 +75,7 @@ pub fn parser(
                 let size = fixed_size_node.size;
 
                 // Skip if no default value
-                let Some(default_value) = field.default_value.as_ref() else {
-                    return None;
-                };
+                let default_value = field.default_value.as_ref()?;
 
                 // Skip if default value isn't bytes
                 let ValueNode::Bytes(bytes) = default_value else {

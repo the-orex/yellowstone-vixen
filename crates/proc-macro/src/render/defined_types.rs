@@ -230,7 +230,7 @@ fn render_defined_tuple(ident: &syn::Ident, tuple: &codama_nodes::TupleTypeNode)
         let tag = (i + 1) as u32;
         let name = format_ident!("item_{}", i);
 
-        let rendered = render_field_with_helpers(&ident, &name, tag, item);
+        let rendered = render_field_with_helpers(ident, &name, tag, item);
         extra_defs.extend(rendered.extra_defs);
         tuple_fields.push(rendered.field);
     }

@@ -117,9 +117,7 @@ pub fn single_instruction_parser(
         DiscriminatorNode::Field(node) => {
             let offset = node.offset;
 
-            let Some(field) = instruction.arguments.iter().find(|f| f.name == node.name) else {
-                return None;
-            };
+            let field = instruction.arguments.iter().find(|f| f.name == node.name)?;
 
             // Skip if not fixed-size type
             let TypeNode::FixedSize(fixed_size_node) = &field.r#type else {
@@ -128,9 +126,7 @@ pub fn single_instruction_parser(
 
             let size = fixed_size_node.size;
 
-            let Some(default_value) = field.default_value.as_ref() else {
-                return None;
-            };
+            let default_value = field.default_value.as_ref()?;
 
             let InstructionInputValueNode::Bytes(bytes) = default_value else {
                 return None;

@@ -401,6 +401,6 @@ mod tests {
         let args = mtc.args.as_ref().expect("missing args");
 
         assert_eq!(args.decimals, 10);
-        assert_eq!(args.amount, 10.mul(10u64.pow(args.decimals as u32)));
+        assert_eq!(args.amount, 10.mul(10u64.pow(args.decimals)));
     }
 }
