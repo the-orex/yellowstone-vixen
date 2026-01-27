@@ -17,6 +17,6 @@ yellowstone-vixen-parser = { workspace = true }
 borsh = { workspace = true, features = ["derive"] }
 yellowstone-vixen-yellowstone-fumarole-source = { workspace = true }
 yellowstone-vixen-spl-token-parser = { workspace = true }
-yellowstone-vixen-spl-token-extensions-parser = { workspace = true }
+# yellowstone-vixen-spl-token-extensions-parser = { workspace = true }
 rustls = { workspace = true }
 prost = { workspace = true, features = ["derive"] }

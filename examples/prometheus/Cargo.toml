@@ -18,6 +18,6 @@ yellowstone-vixen-proc-macro = { workspace = true }
 borsh = { workspace = true, features = ["derive"] }
 yellowstone-vixen-yellowstone-grpc-source = { workspace = true }
 yellowstone-vixen-spl-token-parser = { workspace = true }
-yellowstone-vixen-spl-token-extensions-parser = { workspace = true }
+# yellowstone-vixen-spl-token-extensions-parser = { workspace = true }
 rustls = { workspace = true }
 prost = { workspace = true, features = ["derive"] }

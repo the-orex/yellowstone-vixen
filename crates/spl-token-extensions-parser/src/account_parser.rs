@@ -57,6 +57,7 @@ impl ExtendedTokenAccount {
 
         for extension in extension_types {
             let extension_data = token_account_extensions_data_bytes(&unpacked, extension)?;
+
             extension_data_vec.push(ExtensionData::try_from((extension, extension_data))?);
         }
 
@@ -128,6 +129,7 @@ impl Parser for AccountParser {
 
     async fn parse(&self, acct: &AccountUpdate) -> ParseResult<Self::Output> {
         let inner = acct.account.as_ref().ok_or(ProgramError::InvalidArgument)?;
+
         TokenExtensionState::try_unpack(&inner.data)
     }
 }

@@ -19,9 +19,10 @@ use crate::{
         CreateNativeMintAccounts, InitializeMintCloseAuthorityAccounts,
         InitializeMintCloseAuthorityArgs, InitializeNonTransferableMintAccounts,
         InitializePermanentDelegateAccounts, InitializePermanentDelegateArgs, ReallocateAccounts,
-        ReallocateArgs, WithdrawExcessLamportsAccounts,
+        ReallocateArgs, SetAuthorityArgs, WithdrawExcessLamportsAccounts,
     },
-    ExtensionInstructionParser, SetAuthorityArgs, TokenExtensionProgramInstruction,
+    token_extension_program_instruction::{self},
+    AuthorityTypeProto, ExtensionInstructionParser, TokenExtensionProgramInstruction,
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -53,201 +54,337 @@ impl InstructionParser {
     #[allow(clippy::too_many_lines)]
     fn parse_impl(ix: &InstructionUpdate) -> Result<TokenExtensionProgramInstruction> {
         let accounts_len = ix.accounts.len();
+
+        // helper: wrap a oneof variant into the envelope struct
+        let envelope = |ix_oneof: token_extension_program_instruction::Ix| {
+            TokenExtensionProgramInstruction { ix: Some(ix_oneof) }
+        };
+
         match SplTokenInstruction::unpack(&ix.data) {
             Ok(token_ix) => match token_ix {
                 SplTokenInstruction::TransferFeeExtension => {
-                    Ok(TokenExtensionProgramInstruction::TransferFee(
-                        TransferFeeInstruction::try_parse(ix)?,
-                    ))
-                },
-                SplTokenInstruction::ConfidentialTransferExtension => {
-                    Ok(TokenExtensionProgramInstruction::ConfidentialTransfer(
-                        ConfidentialTransferInstruction::try_parse(ix)?,
-                    ))
-                },
-                SplTokenInstruction::ConfidentialTransferFeeExtension => {
-                    Ok(TokenExtensionProgramInstruction::ConfidentialTransferFee(
-                        ConfidentialTransferFeeInstruction::try_parse(ix)?,
-                    ))
-                },
-                SplTokenInstruction::CpiGuardExtension => {
-                    Ok(TokenExtensionProgramInstruction::CpiGuard(
-                        CommonExtensionInstructions::try_parse_extension_instruction(
-                            ExtensionWithCommonInstruction::CpiGuard,
-                            ix,
-                        )?,
+                    let parsed = TransferFeeInstruction::try_parse(ix)?;
+
+                    Ok(envelope(
+                        token_extension_program_instruction::Ix::TransferFee(
+                            token_extension_program_instruction::TransferFee { ix: Some(parsed) },
+                        ),
                     ))
                 },
 
+                SplTokenInstruction::ConfidentialTransferExtension => {
+                    let parsed = ConfidentialTransferInstruction::try_parse(ix)?;
+
+                    Ok(envelope(
+                        token_extension_program_instruction::Ix::ConfidentialTransfer(
+                            token_extension_program_instruction::ConfidentialTransfer {
+                                ix: Some(parsed),
+                            },
+                        ),
+                    ))
+                },
+
+                SplTokenInstruction::ConfidentialTransferFeeExtension => {
+                    let parsed = ConfidentialTransferFeeInstruction::try_parse(ix)?;
+
+                    Ok(envelope(
+                        token_extension_program_instruction::Ix::ConfidentialTransferFee(
+                            token_extension_program_instruction::ConfidentialTransferFee {
+                                ix: Some(parsed),
+                            },
+                        ),
+                    ))
+                },
+
+                SplTokenInstruction::CpiGuardExtension => {
+                    let parsed = CommonExtensionInstructions::try_parse_extension_instruction(
+                        ExtensionWithCommonInstruction::CpiGuard,
+                        ix,
+                    )?;
+
+                    Ok(envelope(token_extension_program_instruction::Ix::CpiGuard(
+                        token_extension_program_instruction::CpiGuard { ix: Some(parsed) },
+                    )))
+                },
+
                 SplTokenInstruction::DefaultAccountStateExtension => {
-                    Ok(TokenExtensionProgramInstruction::DefaultAccountState(
-                        CommonExtensionInstructions::try_parse_extension_instruction(
-                            ExtensionWithCommonInstruction::DefaultAccountState,
-                            ix,
-                        )?,
+                    let parsed = CommonExtensionInstructions::try_parse_extension_instruction(
+                        ExtensionWithCommonInstruction::DefaultAccountState,
+                        ix,
+                    )?;
+
+                    Ok(envelope(
+                        token_extension_program_instruction::Ix::DefaultAccountState(
+                            token_extension_program_instruction::DefaultAccountState {
+                                ix: Some(parsed),
+                            },
+                        ),
                     ))
                 },
+
                 SplTokenInstruction::InterestBearingMintExtension => {
-                    Ok(TokenExtensionProgramInstruction::InterestBearingMint(
-                        CommonExtensionInstructions::try_parse_extension_instruction(
-                            ExtensionWithCommonInstruction::InterestBearingMint,
-                            ix,
-                        )?,
+                    let parsed = CommonExtensionInstructions::try_parse_extension_instruction(
+                        ExtensionWithCommonInstruction::InterestBearingMint,
+                        ix,
+                    )?;
+
+                    Ok(envelope(
+                        token_extension_program_instruction::Ix::InterestBearingMint(
+                            token_extension_program_instruction::InterestBearingMint {
+                                ix: Some(parsed),
+                            },
+                        ),
                     ))
                 },
+
                 SplTokenInstruction::MemoTransferExtension => {
-                    Ok(TokenExtensionProgramInstruction::MemoTransfer(
-                        CommonExtensionInstructions::try_parse_extension_instruction(
-                            ExtensionWithCommonInstruction::MemoTransfer,
-                            ix,
-                        )?,
+                    let parsed = CommonExtensionInstructions::try_parse_extension_instruction(
+                        ExtensionWithCommonInstruction::MemoTransfer,
+                        ix,
+                    )?;
+
+                    Ok(envelope(
+                        token_extension_program_instruction::Ix::MemoTransfer(
+                            token_extension_program_instruction::MemoTransfer { ix: Some(parsed) },
+                        ),
                     ))
                 },
 
                 SplTokenInstruction::GroupMemberPointerExtension => {
-                    Ok(TokenExtensionProgramInstruction::GroupMemberPointer(
-                        CommonExtensionInstructions::try_parse_extension_instruction(
-                            ExtensionWithCommonInstruction::GroupMemberPointer,
-                            ix,
-                        )?,
+                    let parsed = CommonExtensionInstructions::try_parse_extension_instruction(
+                        ExtensionWithCommonInstruction::GroupMemberPointer,
+                        ix,
+                    )?;
+
+                    Ok(envelope(
+                        token_extension_program_instruction::Ix::GroupMemberPointer(
+                            token_extension_program_instruction::GroupMemberPointer {
+                                ix: Some(parsed),
+                            },
+                        ),
                     ))
                 },
 
                 SplTokenInstruction::GroupPointerExtension => {
-                    Ok(TokenExtensionProgramInstruction::GroupPointer(
-                        CommonExtensionInstructions::try_parse_extension_instruction(
-                            ExtensionWithCommonInstruction::GroupPointer,
-                            ix,
-                        )?,
+                    let parsed = CommonExtensionInstructions::try_parse_extension_instruction(
+                        ExtensionWithCommonInstruction::GroupPointer,
+                        ix,
+                    )?;
+
+                    Ok(envelope(
+                        token_extension_program_instruction::Ix::GroupPointer(
+                            token_extension_program_instruction::GroupPointer { ix: Some(parsed) },
+                        ),
                     ))
                 },
 
                 SplTokenInstruction::MetadataPointerExtension => {
-                    Ok(TokenExtensionProgramInstruction::MetadataPointer(
-                        CommonExtensionInstructions::try_parse_extension_instruction(
-                            ExtensionWithCommonInstruction::MetadataPointer,
-                            ix,
-                        )?,
+                    let parsed = CommonExtensionInstructions::try_parse_extension_instruction(
+                        ExtensionWithCommonInstruction::MetadataPointer,
+                        ix,
+                    )?;
+
+                    Ok(envelope(
+                        token_extension_program_instruction::Ix::MetadataPointer(
+                            token_extension_program_instruction::MetadataPointer {
+                                ix: Some(parsed),
+                            },
+                        ),
                     ))
                 },
 
                 SplTokenInstruction::TransferHookExtension => {
-                    Ok(TokenExtensionProgramInstruction::TransferHook(
-                        CommonExtensionInstructions::try_parse_extension_instruction(
-                            ExtensionWithCommonInstruction::TransferHook,
-                            ix,
-                        )?,
+                    let parsed = CommonExtensionInstructions::try_parse_extension_instruction(
+                        ExtensionWithCommonInstruction::TransferHook,
+                        ix,
+                    )?;
+
+                    Ok(envelope(
+                        token_extension_program_instruction::Ix::TransferHook(
+                            token_extension_program_instruction::TransferHook { ix: Some(parsed) },
+                        ),
                     ))
                 },
+
                 SplTokenInstruction::SetAuthority {
                     authority_type,
                     new_authority,
                 } => {
                     check_min_accounts_req(accounts_len, 2)?;
-                    Ok(TokenExtensionProgramInstruction::SetAuthority {
-                        accounts: SetAuthorityAccounts {
-                            account: ix.accounts[0],
-                            current_authority: ix.accounts[1],
-                            multisig_signers: ix.accounts[2..].to_vec(),
+
+                    // IMPORTANT: ix.accounts are Pubkey (bytes), and your proto structs want Vec<u8>
+                    let accounts = SetAuthorityAccounts {
+                        account: ix.accounts[0].to_vec(),
+                        current_authority: ix.accounts[1].to_vec(),
+                        multisig_signers: ix.accounts[2..].iter().map(|pk| pk.to_vec()).collect(),
+                    };
+
+                    let args = SetAuthorityArgs {
+                        authority_type: AuthorityTypeProto::from(authority_type) as i32,
+                        new_authority: new_authority.map(|pk| pk.to_bytes().to_vec()).into(),
+                    };
+
+                    Ok(envelope(token_extension_program_instruction::Ix::SetAuthority(
+                        crate::instructions::token_extension_program_instruction::SetAuthority {
+                            accounts: Some(accounts),
+                            args: Some(args),
                         },
-                        args: SetAuthorityArgs {
-                            authority_type,
-                            new_authority: new_authority.map(|p| p.to_bytes().into()).into(),
-                        },
-                    })
+                    )))
                 },
+
                 SplTokenInstruction::CreateNativeMint => {
                     check_min_accounts_req(accounts_len, 2)?;
-                    Ok(TokenExtensionProgramInstruction::CreateNativeMint {
-                        accounts: CreateNativeMintAccounts {
-                            funding_account: ix.accounts[0],
-                            mint: ix.accounts[1],
-                        },
-                    })
+
+                    let accounts = CreateNativeMintAccounts {
+                        funding_account: ix.accounts[0].to_vec(),
+                        mint: ix.accounts[1].to_vec(),
+                    };
+
+                    Ok(envelope(
+                        token_extension_program_instruction::Ix::CreateNativeMint(
+                            crate::instructions::token_extension_program_instruction::CreateNativeMint {
+                                accounts: Some(accounts),
+                            },
+                        ),
+                    ))
                 },
 
                 SplTokenInstruction::InitializeMintCloseAuthority { close_authority } => {
                     check_min_accounts_req(accounts_len, 1)?;
-                    Ok(
-                        TokenExtensionProgramInstruction::InitializeMintCloseAuthority {
-                            accounts: InitializeMintCloseAuthorityAccounts {
-                                mint: ix.accounts[0],
+
+                    let accounts = InitializeMintCloseAuthorityAccounts {
+                        mint: ix.accounts[0].to_vec(),
+                    };
+
+                    let args = InitializeMintCloseAuthorityArgs {
+                        close_authority: close_authority.map(|pk| pk.to_bytes().to_vec()).into(),
+                    };
+
+                    Ok(envelope(
+                        token_extension_program_instruction::Ix::InitializeMintCloseAuthority(
+                            crate::instructions::token_extension_program_instruction::InitializeMintCloseAuthority {
+                                accounts: Some(accounts),
+                                args: Some(args),
                             },
-                            args: InitializeMintCloseAuthorityArgs {
-                                close_authority: close_authority
-                                    .map(|p| p.to_bytes().into())
-                                    .into(),
-                            },
-                        },
-                    )
+                        ),
+                    ))
                 },
 
                 SplTokenInstruction::InitializeNonTransferableMint => {
                     check_min_accounts_req(accounts_len, 1)?;
-                    Ok(
-                        TokenExtensionProgramInstruction::InitializeNonTransferableMint {
-                            accounts: InitializeNonTransferableMintAccounts {
-                                mint: ix.accounts[0],
+
+                    let accounts = InitializeNonTransferableMintAccounts {
+                        mint: ix.accounts[0].to_vec(),
+                    };
+
+                    Ok(envelope(
+                        token_extension_program_instruction::Ix::InitializeNonTransferableMint(
+                            crate::instructions::token_extension_program_instruction::InitializeNonTransferableMint {
+                                accounts: Some(accounts),
                             },
-                        },
-                    )
+                        ),
+                    ))
                 },
 
                 SplTokenInstruction::Reallocate { extension_types } => {
                     check_min_accounts_req(accounts_len, 4)?;
-                    Ok(TokenExtensionProgramInstruction::Reallocate {
-                        accounts: ReallocateAccounts {
-                            account: ix.accounts[0],
-                            payer: ix.accounts[1],
-                            owner: ix.accounts[3],
-                            multisig_signers: ix.accounts[4..].to_vec(),
-                        },
-                        args: ReallocateArgs { extension_types },
-                    })
+
+                    let accounts = ReallocateAccounts {
+                        account: ix.accounts[0].to_vec(),
+                        payer: ix.accounts[1].to_vec(),
+                        owner: ix.accounts[3].to_vec(),
+                        multisig_signers: ix.accounts[4..].iter().map(|pk| pk.to_vec()).collect(),
+                    };
+
+                    let args = ReallocateArgs {
+                        extension_types: extension_types.into_iter().map(|t| t as u32).collect(),
+                    };
+
+                    Ok(envelope(
+                        token_extension_program_instruction::Ix::Reallocate(
+                            crate::instructions::token_extension_program_instruction::Reallocate {
+                                accounts: Some(accounts),
+                                args: Some(args),
+                            },
+                        ),
+                    ))
                 },
 
                 SplTokenInstruction::InitializePermanentDelegate { delegate } => {
                     check_min_accounts_req(accounts_len, 1)?;
-                    Ok(
-                        TokenExtensionProgramInstruction::InitializePermanentDelegate {
-                            accounts: InitializePermanentDelegateAccounts {
-                                account: ix.accounts[0],
+
+                    let accounts = InitializePermanentDelegateAccounts {
+                        account: ix.accounts[0].to_vec(),
+                    };
+
+                    let args = InitializePermanentDelegateArgs {
+                        delegate: delegate.to_bytes().to_vec(),
+                    };
+
+                    Ok(envelope(
+                        token_extension_program_instruction::Ix::InitializePermanentDelegate(
+                            crate::instructions::token_extension_program_instruction::InitializePermanentDelegate {
+                                accounts: Some(accounts),
+                                args: Some(args),
                             },
-                            args: InitializePermanentDelegateArgs {
-                                delegate: delegate.to_bytes().into(),
-                            },
-                        },
-                    )
+                        ),
+                    ))
                 },
 
                 SplTokenInstruction::WithdrawExcessLamports => {
                     check_min_accounts_req(accounts_len, 3)?;
-                    Ok(TokenExtensionProgramInstruction::WithdrawExcessLamports {
-                        accounts: WithdrawExcessLamportsAccounts {
-                            source_account: ix.accounts[0],
-                            destination_account: ix.accounts[1],
-                            authority: ix.accounts[2],
-                            multisig_signers: ix.accounts[3..].to_vec(),
-                        },
-                    })
+
+                    let accounts = WithdrawExcessLamportsAccounts {
+                        source_account: ix.accounts[0].to_vec(),
+                        destination_account: ix.accounts[1].to_vec(),
+                        authority: ix.accounts[2].to_vec(),
+                        multisig_signers: ix.accounts[3..].iter().map(|pk| pk.to_vec()).collect(),
+                    };
+
+                    Ok(envelope(
+                        token_extension_program_instruction::Ix::WithdrawExcessLamports(
+                            crate::instructions::token_extension_program_instruction::WithdrawExcessLamports{
+                                accounts: Some(accounts),
+                            },
+                        ),
+                    ))
                 },
 
-                _ => Ok(TokenExtensionProgramInstruction::TokenProgram(
-                    TokenProgramInstructionParser::parse_impl(ix).parse_err(
-                        "Error parsing token extension instruction as token instruction",
-                    )?,
-                )),
+                // Anything else: fallback to SPL token parser
+                _ => {
+                    let token_instruction = TokenProgramInstructionParser::parse_impl(ix)
+                        .parse_err(
+                            "Error parsing token extension instruction as token instruction",
+                        )?;
+
+                    Ok(envelope(
+                        token_extension_program_instruction::Ix::TokenProgram(
+                            token_extension_program_instruction::TokenProgram {
+                                ix: Some(token_instruction),
+                            },
+                        ),
+                    ))
+                },
             },
+
             Err(e) => {
                 if SplTokenMetadataInstruction::unpack(&ix.data).is_ok() {
-                    return Ok(TokenExtensionProgramInstruction::TokenMetadata(
-                        TokenMetadataInstruction::try_parse(ix)?,
+                    let parsed = TokenMetadataInstruction::try_parse(ix)?;
+
+                    return Ok(envelope(
+                        token_extension_program_instruction::Ix::TokenMetadata(
+                            token_extension_program_instruction::TokenMetadata { ix: Some(parsed) },
+                        ),
                     ));
                 }
 
                 if SplTokenGroupInstruction::unpack(&ix.data).is_ok() {
-                    return Ok(TokenExtensionProgramInstruction::TokenGroup(
-                        TokenGroupInstruction::try_parse(ix)?,
+                    let parsed = TokenGroupInstruction::try_parse(ix)?;
+
+                    return Ok(envelope(
+                        token_extension_program_instruction::Ix::TokenGroup(
+                            token_extension_program_instruction::TokenGroup { ix: Some(parsed) },
+                        ),
                     ));
                 }
 
@@ -262,7 +399,6 @@ mod tests {
     use std::ops::Mul;
 
     use yellowstone_vixen_mock::tx_fixture;
-    use yellowstone_vixen_spl_token_parser::TokenProgramInstruction;
 
     use super::{InstructionParser, Parser, TokenExtensionProgramInstruction};
 
@@ -270,11 +406,24 @@ mod tests {
     async fn test_mint_to_checked_ix_parsing() {
         let parser = InstructionParser;
 
-        let ixs = tx_fixture!("44gWEyKUkeUabtJr4eT3CQEkFGrD4jMdwUV6Ew5MR5K3RGizs9iwbkb5Q4T3gnAaSgHxn3ERQ8g5YTXuLP1FrWnt",&parser);
+        let ixs = tx_fixture!(
+            "44gWEyKUkeUabtJr4eT3CQEkFGrD4jMdwUV6Ew5MR5K3RGizs9iwbkb5Q4T3gnAaSgHxn3ERQ8g5YTXuLP1FrWnt",
+            &parser
+        );
 
-        let TokenExtensionProgramInstruction::TokenProgram(
-            TokenProgramInstruction::MintToChecked { args, .. },
-        ) = &ixs[0]
+        let TokenExtensionProgramInstruction {
+            ix:
+                Some(crate::instructions::token_extension_program_instruction::Ix::TokenProgram(
+                    crate::instructions::token_extension_program_instruction::TokenProgram {
+                        ix:
+                            Some(yellowstone_vixen_spl_token_parser::TokenProgramInstruction {
+                                ix: Some(yellowstone_vixen_spl_token_parser::token_program_instruction::Ix::MintToChecked(
+                                    yellowstone_vixen_spl_token_parser::token_program_instruction::MintToChecked { args: Some(args), .. }
+                                )),
+                            }),
+                    },
+                )),
+        } = &ixs[0]
         else {
             panic!("Invalid Instruction");
         };
